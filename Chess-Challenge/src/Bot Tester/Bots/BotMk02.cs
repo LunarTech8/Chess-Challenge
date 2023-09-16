@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public class MyBot : IChessBot
+public class BotMk02 : IChessBot
 {
 	// ----------------
 	// DATA CODE
@@ -152,7 +152,7 @@ public class MyBot : IChessBot
 	public Move Think(Board board, Timer timer)
 	{
 		var isCheckmateFound = false;  // DEBUG:
-		Console.WriteLine("--------------------");  // DEBUG:
+		Console.WriteLine("-------- BotMk02 --------");  // DEBUG:
 		isSearchCancelled = false;
 		var cancelSearchTimer = new System.Threading.CancellationTokenSource();
 		System.Threading.Tasks.Task.Delay(CalculateThinkTime(timer), cancelSearchTimer.Token).ContinueWith((task) => isSearchCancelled = true);

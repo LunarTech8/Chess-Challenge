@@ -19,7 +19,9 @@ namespace ChessChallenge.Application
         {
             Human,
             MyBot,
-            EvilBot
+            EvilBot,
+            TestBotA,
+            TestBotB
         }
 
         // Game state
@@ -194,6 +196,10 @@ namespace ChessChallenge.Application
                 boardUI.SetPerspective(PlayerWhite.IsHuman);
                 HumanWasWhiteLastGame = PlayerWhite.IsHuman;
             }
+            else if (BotTester.IsBotTestMatch(PlayerWhite.Bot.GetType(), PlayerBlack.Bot.GetType()))
+            {
+                boardUI.SetPerspective(PlayerWhite.Bot.GetType() == BotTester.TestBotA);
+            }
             else if (PlayerWhite.Bot is MyBot && PlayerBlack.Bot is MyBot)
             {
                 boardUI.SetPerspective(true);
@@ -210,6 +216,8 @@ namespace ChessChallenge.Application
             {
                 PlayerType.MyBot => new ChessPlayer(new MyBot(), type, GameDurationMilliseconds),
                 PlayerType.EvilBot => new ChessPlayer(new EvilBot(), type, GameDurationMilliseconds),
+                PlayerType.TestBotA => new ChessPlayer(Activator.CreateInstance(BotTester.TestBotA) ?? new MyBot(), type, GameDurationMilliseconds),
+                PlayerType.TestBotB => new ChessPlayer(Activator.CreateInstance(BotTester.TestBotB) ?? new MyBot(), type, GameDurationMilliseconds),
                 _ => new ChessPlayer(new HumanPlayer(boardUI), type)
             };
         }
@@ -290,9 +298,12 @@ namespace ChessChallenge.Application
                 // If 2 bots playing each other, start next game automatically.
                 if (PlayerWhite.IsBot && PlayerBlack.IsBot)
                 {
+                    if (!log && !autoStartNextBotMatch && BotTester.IsBotTestMatch(PlayerWhite.Bot.GetType(), PlayerBlack.Bot.GetType()))
+                        BotTester.AddResult(BotStatsA.NumWins, BotStatsA.NumDraws, BotStatsA.NumLosses, BotStatsA.NumTimeouts, BotStatsA.NumIllegalMoves);
+
                     UpdateBotMatchStats(result);
                     botMatchGameIndex++;
-                    int numGamesToPlay = botMatchStartFens.Length * 2;
+                    int numGamesToPlay = TotalGameCount;
 
                     if (botMatchGameIndex < numGamesToPlay && autoStartNextBotMatch)
                     {
@@ -307,7 +318,10 @@ namespace ChessChallenge.Application
                     }
                     else if (autoStartNextBotMatch)
                     {
+                        if (BotTester.IsBotTestMatch(PlayerWhite.Bot.GetType(), PlayerBlack.Bot.GetType()))
+                            BotTester.AddResult(BotStatsA.NumWins, BotStatsA.NumDraws, BotStatsA.NumLosses, BotStatsA.NumTimeouts, BotStatsA.NumIllegalMoves);
                         Log("Match finished", false, ConsoleColor.Blue);
+                        // TODO: implement auto retesting with different settings based on entries from TestQueue.txt
                     }
                 }
             }
@@ -395,7 +409,14 @@ namespace ChessChallenge.Application
         }
 
         static string GetPlayerName(ChessPlayer player) => GetPlayerName(player.PlayerType);
-        static string GetPlayerName(PlayerType type) => type.ToString();
+        static string GetPlayerName(PlayerType type)
+        {
+            if (type == PlayerType.TestBotA)
+                return BotTester.TestBotA.Name;
+            else if (type == PlayerType.TestBotB)
+                return BotTester.TestBotB.Name;
+            return type.ToString();
+        }
 
         public void StartNewBotMatch(PlayerType botTypeA, PlayerType botTypeB)
         {
@@ -419,7 +440,17 @@ namespace ChessChallenge.Application
         ChessPlayer PlayerToMove => board.IsWhiteToMove ? PlayerWhite : PlayerBlack;
         ChessPlayer PlayerNotOnMove => board.IsWhiteToMove ? PlayerBlack : PlayerWhite;
 
-        public int TotalGameCount => botMatchStartFens.Length * 2;
+        public int TotalGameCount
+        {
+            get
+            {
+                var result = botMatchStartFens.Length * 2;
+                if (BotTester.IsBotTestMatch(PlayerWhite.Bot.GetType(), PlayerBlack.Bot.GetType()))
+                    result = Math.Min(BotTester.NumberOfGames, result);
+                return result;
+            }
+        }
+
         public int CurrGameNumber => Math.Min(TotalGameCount, botMatchGameIndex + 1);
         public string AllPGNs => pgns.ToString();
 
