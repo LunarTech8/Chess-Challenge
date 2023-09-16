@@ -3,7 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public class MyBot : IChessBot
+namespace ChessChallenge.Example
+{
+public class EvilBot : IChessBot
 {
 	// ----------------
 	// DATA CODE
@@ -34,6 +36,15 @@ public class MyBot : IChessBot
 	private bool isSearchCancelled;
 	private readonly Random random = new();
 
+	private void RandomizeFirstMove(ref Move[] moves)  // TODO: might eat up to many tokens without much advantace
+	{
+		if (moves.Length > 0)
+		{
+			var index = random.Next(moves.Length);
+			(moves[index], moves[0]) = (moves[0], moves[index]);
+		}
+	}
+
 	private int GetMoveRating(Board board, Move move, Move prioMove)
 	{
 		if (move == prioMove)  // TODO: bestMoveOverall might be checked here directly (prioMove could be removed)
@@ -52,14 +63,15 @@ public class MyBot : IChessBot
 
 		return moveRating;
 		// TODO: implement stuff like:
-		// - King should be at back at start and at front when winning / late game
-		// - Advance pawns at start
-		// - Avoid repetitions
+		// - King should be at back at start and at front when winning
+		// - Advance pawns
+		// - Avoid repetitions!
 		// TODO: look here for inspiration: https://github.com/SebLague/Chess-Coding-Adventure/blob/abcb1e311a7fec0393e0b7d2ddf4920ab3baa41b/Chess-Coding-Adventure/src/Core/Search/MoveOrdering.cs#L54
 	}
 
 	private void SortMoves(ref Move[] moves, Board board, Move prioMove)
 	{
+		// RandomizeFirstMove(ref moves);  // TODO: probably good to bring in some randomization
 		// TODO: probably faster to store the ratings for each move instead of getting them for each compare
 		Array.Sort(moves, delegate(Move moveA, Move moveB) { return GetMoveRating(board, moveB, prioMove).CompareTo(GetMoveRating(board, moveA, prioMove)); });
 	}
@@ -172,7 +184,7 @@ public class MyBot : IChessBot
 	public Move Think(Board board, Timer timer)
 	{
 		var isCheckmateFound = false;  // DEBUG:
-		Console.WriteLine("--------------------");  // DEBUG:
+		// Console.WriteLine("--------------------");  // DEBUG:
 		isSearchCancelled = false;
 		var cancelSearchTimer = new System.Threading.CancellationTokenSource();
 		System.Threading.Tasks.Task.Delay(CalculateThinkTime(timer), cancelSearchTimer.Token).ContinueWith((task) => isSearchCancelled = true);
@@ -183,7 +195,7 @@ public class MyBot : IChessBot
 			var lastEval = MiniMax(board, minimaxDepth, -CHECKMATE_VALUE, CHECKMATE_VALUE);
 			if (isCheckmateFound == false && Math.Abs(lastEval) == CHECKMATE_VALUE)  // DEBUG:
 			{
-				Console.WriteLine((board.IsWhiteToMove == (Math.Sign(lastEval) == 1) ? "White" : "Black") + " checkmates in " + minimaxDepth.ToString() + " turn(s)");
+				// Console.WriteLine((board.IsWhiteToMove == (Math.Sign(lastEval) == 1) ? "White" : "Black") + " checkmates in " + minimaxDepth.ToString() + " turn(s)");
 				isCheckmateFound = true;
 			}
 			if (bestMoveInIteration != Move.NullMove)
@@ -191,7 +203,8 @@ public class MyBot : IChessBot
 			if (isSearchCancelled)
 				break;
 		}
-		Console.WriteLine("Max minimaxDepth = " + minimaxDepth);  // DEBUG:
+		// Console.WriteLine("Max minimaxDepth = " + minimaxDepth);  // DEBUG:
 		return bestMoveOverall;
 	}
+}
 }
