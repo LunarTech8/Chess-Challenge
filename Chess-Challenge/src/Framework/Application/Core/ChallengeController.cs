@@ -298,8 +298,12 @@ namespace ChessChallenge.Application
                 // If 2 bots playing each other, start next game automatically.
                 if (PlayerWhite.IsBot && PlayerBlack.IsBot)
                 {
+                    // Add result without last game if test series was aborted prematurely:
                     if (!log && !autoStartNextBotMatch && BotTester.IsBotTestMatch(PlayerWhite.Bot.GetType(), PlayerBlack.Bot.GetType()))
-                        BotTester.AddResult(BotStatsA.NumWins, BotStatsA.NumDraws, BotStatsA.NumLosses, BotStatsA.NumTimeouts, BotStatsA.NumIllegalMoves);
+                    {
+                        BotTester.NumberOfGames = botMatchGameIndex;
+                        BotTester.AddResult(BotStatsA.NumWins, BotStatsA.NumDraws, BotStatsA.NumLosses, BotStatsA.NumTimeouts, BotStatsA.NumIllegalMoves, false);
+                    }
 
                     UpdateBotMatchStats(result);
                     botMatchGameIndex++;
@@ -318,8 +322,9 @@ namespace ChessChallenge.Application
                     }
                     else if (autoStartNextBotMatch)
                     {
+                        // Add result if test series was ended regularly:
                         if (BotTester.IsBotTestMatch(PlayerWhite.Bot.GetType(), PlayerBlack.Bot.GetType()))
-                            BotTester.AddResult(BotStatsA.NumWins, BotStatsA.NumDraws, BotStatsA.NumLosses, BotStatsA.NumTimeouts, BotStatsA.NumIllegalMoves);
+                            BotTester.AddResult(BotStatsA.NumWins, BotStatsA.NumDraws, BotStatsA.NumLosses, BotStatsA.NumTimeouts, BotStatsA.NumIllegalMoves, true);
                         Log("Match finished", false, ConsoleColor.Blue);
                         // TODO: implement auto retesting with different settings based on entries from TestQueue.txt
                     }

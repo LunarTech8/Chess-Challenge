@@ -1,1 +1,9 @@
 BotMk02 vs BotMk01 outcome with 1000 games: 385 wins - 247 draws - 368 losses - 0 timeouts - 7 illegalMoves
+BotMk03 vs BotMk02 outcome with 24 games: 5 wins - 4 draws - 15 losses - 0 timeouts - 0 illegalMoves
+BotMk03 vs BotMk01 outcome with 10 games: 1 wins - 3 draws - 6 losses - 0 timeouts - 0 illegalMoves
+BotMk03 vs BotMk02 outcome with 10 games: 1 wins - 1 draws - 8 losses - 0 timeouts - 0 illegalMoves
+BotMk03 vs BotMk01 outcome with 10 games: 0 wins - 0 draws - 0 losses - 0 timeouts - 0 illegalMoves
+BotMk03 vs BotMk01 outcome with 10 games: 0 wins - 0 draws - 1 losses - 0 timeouts - 0 illegalMoves
+BotMk03 vs BotMk02 outcome with 336 games: 94 wins - 70 draws - 172 losses - 0 timeouts - 9 illegalMoves
+BotMk04 vs BotMk03 outcome with 10 games: 6 wins - 1 draws - 3 losses - 0 timeouts - 0 illegalMoves
+BotMk04 vs BotMk03 outcome with 10 games: 7 wins - 0 draws - 3 losses - 0 timeouts - 0 illegalMoves
