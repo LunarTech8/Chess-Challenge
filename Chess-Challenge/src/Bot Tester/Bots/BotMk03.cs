@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public class MyBot : IChessBot
+public class BotMk03 : IChessBot
 {
 	// ----------------
 	// DATA CODE
