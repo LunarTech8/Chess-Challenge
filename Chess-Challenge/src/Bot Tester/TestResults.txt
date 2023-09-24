@@ -10,3 +10,5 @@ BotMk04 vs BotMk03 outcome with 10 games: 7 wins - 0 draws - 3 losses - 0 timeou
 BotMk04 vs BotMk02 outcome with 10 games: 0 wins - 4 draws - 6 losses - 0 timeouts - 0 illegalMoves
 BotMk04 vs BotMk02 outcome with 10 games: 1 wins - 3 draws - 6 losses - 0 timeouts - 0 illegalMoves
 BotMk04 vs BotMk02 outcome with 632 games: 177 wins - 141 draws - 314 losses - 0 timeouts - 4 illegalMoves
+BotMk05 vs BotMk02 outcome with 1000 games: 256 wins - 227 draws - 517 losses - 1 timeouts - 0 illegalMoves
+MyBot vs BotMk02 outcome with 114 games: 58 wins - 9 draws - 47 losses - 0 timeouts - 0 illegalMoves

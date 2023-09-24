@@ -4,7 +4,12 @@ using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 
-public class MyBot : IChessBot
+// public static class Helper
+// {
+// 	public static IEnumerable<byte> ConnectBytesToArray(this IEnumerable<byte> first, ulong file) => first.Concat(BitConverter.GetBytes(file));
+// }
+
+public class BotMk06 : IChessBot
 {
 	// ----------------
 	// DATA CODE

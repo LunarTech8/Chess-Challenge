@@ -1,2 +1,2 @@
-// MyBot vs BotMk05 with 10 games
-BotMk05 vs BotMk02 with 1000 games
+// MyBot vs BotMk02 with 1000 games
+BotMk06 vs BotMk02 with 1000 games
