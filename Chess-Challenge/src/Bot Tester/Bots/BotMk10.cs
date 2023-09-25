@@ -4,7 +4,8 @@ using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 
-public class MyBot : IChessBot
+// Like BotMk06 but with extra moveRating based on endgameFactor for King, Queen, Rook
+public class BotMk10 : IChessBot
 {
 	// ----------------
 	// DATA CODE
@@ -76,12 +77,8 @@ public class MyBot : IChessBot
 
     // TODO: https://www.youtube.com/watch?v=U4ogK0MIzqk&t=430s
     //	- transpositions -> Probably uses up to many tokens
-	//	- maybe add a small amount of openings via uint64 values in
-    // TODO: work again through video for ideas: https://www.youtube.com/watch?v=_vqlIPDR2TU (current 19:22)
-	//	- search extension on checkmate
+    // TODO: work again through video for ideas: https://www.youtube.com/watch?v=_vqlIPDR2TU (current 11:08)
     // TODO: look at source for more ideas: https://github.com/SebLague/Chess-Coding-Adventure/tree/Chess-V2-UCI/Chess-Coding-Adventure/src/Core
-
-	// TODO: check why BotMk02 is doing so well compared to following versions with more functionality, see what change was it that broke it, why is BotMk03 so much worse!!!
 
 
     // ----------------
@@ -157,15 +154,17 @@ public class MyBot : IChessBot
 		if (board.SquareIsAttackedByOpponent(move.TargetSquare))
 			moveRating -= GetPieceValue(move.MovePieceType);
 
+		float endgameFactor = CalculateEndgameFactor(EvaluatePieces(true) + EvaluatePieces(false));
+		if (move.MovePieceType == PieceType.King || move.MovePieceType == PieceType.Queen || move.MovePieceType == PieceType.Rook)
+			moveRating += (int)((endgameFactor - 0.75F) * GetPieceValue(move.MovePieceType));
+
 		return moveRating;
 	}
 
 	private Move[] SortMoves(Move[] moves)
 	{
-		Dictionary<Move, int> moveRatings = new();
-		foreach (var move in moves)
-			moveRatings[move] = CalculateMoveRating(move);
-		Array.Sort(moves, delegate(Move moveA, Move moveB) { return moveRatings[moveA].CompareTo(moveRatings[moveB]); });
+		// TODO: probably faster to store the ratings for each move instead of getting them for each compare
+		Array.Sort(moves, delegate(Move moveA, Move moveB) { return CalculateMoveRating(moveB).CompareTo(CalculateMoveRating(moveA)); });
 		return moves;
 	}
 

@@ -4,7 +4,8 @@ using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 
-public class MyBot : IChessBot
+// Like BotMk06 but with "bad"/unfinished BotMk02 EvaluateKings
+public class BotMk09 : IChessBot
 {
 	// ----------------
 	// DATA CODE
@@ -162,10 +163,8 @@ public class MyBot : IChessBot
 
 	private Move[] SortMoves(Move[] moves)
 	{
-		Dictionary<Move, int> moveRatings = new();
-		foreach (var move in moves)
-			moveRatings[move] = CalculateMoveRating(move);
-		Array.Sort(moves, delegate(Move moveA, Move moveB) { return moveRatings[moveA].CompareTo(moveRatings[moveB]); });
+		// TODO: probably faster to store the ratings for each move instead of getting them for each compare
+		Array.Sort(moves, delegate(Move moveA, Move moveB) { return CalculateMoveRating(moveB).CompareTo(CalculateMoveRating(moveA)); });
 		return moves;
 	}
 
@@ -191,21 +190,19 @@ public class MyBot : IChessBot
 		return eval;
 	}
 
-	private int EvaluateKings(bool forWhite)
+	private int EvaluateKings(bool forWhite)  // TODO: improve
 	{
 		int eval = 0;
 		var opponentKingSquare = board.GetKingSquare(!forWhite);
 		var ownKingSquare = board.GetKingSquare(forWhite);
 
 		// Evaluate opponents king distance from center:
-		// This helps getting the opponents king to the edges to make it easier to checkmate him
-		eval += KING_PUSH_TO_EDGE_FACTOR * (Math.Max(3 - opponentKingSquare.File, opponentKingSquare.File - 4) + Math.Max(3 - opponentKingSquare.Rank, opponentKingSquare.Rank - 4));
+		eval += Math.Max(3 - opponentKingSquare.File, opponentKingSquare.File - 4) + Math.Max(3 - opponentKingSquare.Rank, opponentKingSquare.Rank - 4);
 
 		// Evaluate distance between kings:
-		// This helps getting the own king close to the opponents king to make it easier to checkmate him
-		eval += KING_MOVE_CLOSER_FACTOR * (14 - Math.Abs(ownKingSquare.File - opponentKingSquare.File) - Math.Abs(ownKingSquare.Rank - opponentKingSquare.Rank));
+		eval += 14 - Math.Abs(ownKingSquare.File - opponentKingSquare.File) + Math.Abs(ownKingSquare.Rank - opponentKingSquare.Rank);
 
-		return eval;
+		return (int)Math.Round(eval * 10 * 0.1);
 	}
 
 	private int EvaluateBoard()
@@ -228,8 +225,7 @@ public class MyBot : IChessBot
 		eval += EvaluatePositions(true, PieceType.Queen, POSITION_MAP_QUEEN) - EvaluatePositions(false, PieceType.Queen, POSITION_MAP_QUEEN);
 
 		eval *= board.IsWhiteToMove ? 1 : -1;
-		if (eval > MIN_WINNING_VALUE)
-			eval += (int)(endgameFactor * EvaluateKings(board.IsWhiteToMove));
+		eval += EvaluateKings(board.IsWhiteToMove);
 		return eval;
 	}
 
