@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-// Like BotMk02 but without EvaluateKings
+// Like BotMk02 but without EvaluateKings -> FAIL
 public class BotMk07 : IChessBot
 {
 	// ----------------

@@ -4,7 +4,7 @@ using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 
-// Like BotMk06 but with extra moveRating based on endgameFactor for King, Queen, Rook
+// Like BotMk06 but with extra moveRating based on endgameFactor for King, Queen, Rook -> FAIL
 public class BotMk10 : IChessBot
 {
 	// ----------------

@@ -16,3 +16,4 @@ BotMk08 vs BotMk02 outcome with 400 games: 153 wins - 80 draws - 167 losses - 0 
 BotMk07 vs BotMk02 outcome with 96 games: 5 wins - 36 draws - 55 losses - 0 timeouts - 6 illegalMoves
 BotMk09 vs BotMk06 outcome with 394 games: 162 wins - 75 draws - 157 losses - 0 timeouts - 0 illegalMoves
 BotMk10 vs BotMk06 outcome with 222 games: 44 wins - 49 draws - 129 losses - 0 timeouts - 0 illegalMoves
+BotMk11 vs BotMk06 outcome with 456 games: 0 wins - 2 draws - 454 losses - 0 timeouts - 0 illegalMoves

@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-// Like BotMk02 but without evaluating in PieceType.King in EvaluateBoard
+// Like BotMk02 but without evaluating in PieceType.King in EvaluateBoard -> NO IMPACT
 public class BotMk08 : IChessBot
 {
 	// ----------------

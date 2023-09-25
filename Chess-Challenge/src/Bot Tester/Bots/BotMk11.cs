@@ -4,7 +4,7 @@ using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 
-// Like BotMk06 but with a dict for the results of CalculateMoveRating in SortMoves to try to improve the performance
+// Like BotMk06 but with a dict for the results of CalculateMoveRating in SortMoves to try to improve the performance -> FAIL
 public class BotMk11 : IChessBot
 {
 	// ----------------

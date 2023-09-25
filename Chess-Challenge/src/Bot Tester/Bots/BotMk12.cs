@@ -4,8 +4,8 @@ using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 
-// Like BotMk06 but with "bad"/unfinished BotMk02 EvaluateKings -> NO IMPACT
-public class BotMk09 : IChessBot
+// Like BotMk06 but with POSITION_MAP_KING_START and POSITION_MAP_KING_END
+public class BotMk12 : IChessBot
 {
 	// ----------------
 	// DATA CODE
@@ -49,7 +49,17 @@ public class BotMk09 : IChessBot
 	// DecValues: -05 +00 +05 +05 +05 +05 +00 -05
 	private static readonly int[] POSITION_MAP_QUEEN = CreatePositionMap(0x505A5A645F5A5A50, 0x5A6469646464645A, 0x5A6969696969645A, 0x5F6469696969645F);
 
-	// TODO: maybe also add start and end map for king
+	// DecValues: -80 -60 -40 -30 -20 -10 +20 +20
+	// DecValues: -70 -60 -50 -40 -30 -20 +20 +30
+	// DecValues: -70 -60 -50 -40 -30 -20 -05 +10
+	// DecValues: -70 -60 -60 -50 -40 -20 -05 +00
+	private static readonly int[] POSITION_MAP_KING_START = CreatePositionMap(0x78785A50463C2814, 0x827850463C32281E, 0x6E5F50463C32281E, 0x645F503C3228281E);
+
+	// DecValues: -20 -05 -10 -15 -20 -25 -30 -50
+	// DecValues: -10 +00 -05 -10 -15 -20 -25 -30
+	// DecValues: -10 +05 +20 +35 +30 +20 +00 -30
+	// DecValues: -10 +05 +30 +45 +40 +25 +00 -30
+	private static readonly int[] POSITION_MAP_KING_END = CreatePositionMap(0x32464B50555A5F50, 0x464B50555A5F645A, 0x466478828778695A, 0x46647D8C9182695A);
 
 	private static readonly PieceType[] EVAL_PIECE_TYPES = {PieceType.Pawn, PieceType.Knight, PieceType.Bishop, PieceType.Rook, PieceType.Queen};
 	private const int CHECKMATE_VALUE = 1000000000;
@@ -82,8 +92,6 @@ public class BotMk09 : IChessBot
 	//	- search extension on checkmate
     // TODO: look at source for more ideas: https://github.com/SebLague/Chess-Coding-Adventure/tree/Chess-V2-UCI/Chess-Coding-Adventure/src/Core
 
-	// TODO: check why BotMk02 is doing so well compared to following versions with more functionality, see what change was it that broke it, why is BotMk03 so much worse!!!
-
 
     // ----------------
     // FUNCTION CODE
@@ -98,16 +106,16 @@ public class BotMk09 : IChessBot
 
 	// private void TestMap()  // TEST: to check if maps are defined as expected
 	// {
-	// 	var actualMap = POSITION_MAP_QUEEN;
+	// 	var actualMap = POSITION_MAP_KING_END;
 	// 	int[] expectedMap = {
-	// 		-20,-10,-10, -5, -5,-10,-10,-20,
-	// 		-10,  0,  0,  0,  0,  0,  0,-10,
-	// 		-10,  0,  5,  5,  5,  5,  0,-10,
-	// 		-5,  0,  5,  5,  5,  5,  0, -5,
-	// 		0,  0,  5,  5,  5,  5,  0, 0,
-	// 		-10,  5,  5,  5,  5,  5,  5,-10,
-	// 		-10,  0,  5,  0,  0,  5,  0,-10,
-	// 		-20,-10,-10, -5, -5,-10,-10,-20
+	// 		-20, -10, -10, -10, -10, -10, -10, -20,
+	// 		-5, 0, 5, 5, 5, 5, 0, -5,
+	// 		-10, -5, 20, 30, 30, 20, -5, -10,
+	// 		-15, -10, 35, 45, 45, 35, -10, -15,
+	// 		-20, -15, 30, 40, 40, 30, -15, -20,
+	// 		-25, -20, 20, 25, 25, 20, -20, -25,
+	// 		-30, -25, 0, 0, 0, 0, -25, -30,
+	// 		-50, -30, -30, -30, -30, -30, -30, -50
 	// 	};
 	// 	if (!actualMap.SequenceEqual(expectedMap))
 	// 	{
@@ -163,8 +171,7 @@ public class BotMk09 : IChessBot
 
 	private Move[] SortMoves(Move[] moves)
 	{
-		// TODO: probably faster to store the ratings for each move instead of getting them for each compare
-		Array.Sort(moves, delegate(Move moveA, Move moveB) { return CalculateMoveRating(moveB).CompareTo(CalculateMoveRating(moveA)); });
+		Array.Sort(moves, delegate(Move moveA, Move moveB) { return CalculateMoveRating(moveA).CompareTo(CalculateMoveRating(moveB)); });
 		return moves;
 	}
 
@@ -190,19 +197,21 @@ public class BotMk09 : IChessBot
 		return eval;
 	}
 
-	private int EvaluateKings(bool forWhite)  // TODO: improve
+	private int EvaluateKings(bool forWhite)
 	{
 		int eval = 0;
 		var opponentKingSquare = board.GetKingSquare(!forWhite);
 		var ownKingSquare = board.GetKingSquare(forWhite);
 
 		// Evaluate opponents king distance from center:
-		eval += Math.Max(3 - opponentKingSquare.File, opponentKingSquare.File - 4) + Math.Max(3 - opponentKingSquare.Rank, opponentKingSquare.Rank - 4);
+		// This helps getting the opponents king to the edges to make it easier to checkmate him
+		eval += KING_PUSH_TO_EDGE_FACTOR * (Math.Max(3 - opponentKingSquare.File, opponentKingSquare.File - 4) + Math.Max(3 - opponentKingSquare.Rank, opponentKingSquare.Rank - 4));
 
 		// Evaluate distance between kings:
-		eval += 14 - Math.Abs(ownKingSquare.File - opponentKingSquare.File) + Math.Abs(ownKingSquare.Rank - opponentKingSquare.Rank);
+		// This helps getting the own king close to the opponents king to make it easier to checkmate him
+		eval += KING_MOVE_CLOSER_FACTOR * (14 - Math.Abs(ownKingSquare.File - opponentKingSquare.File) - Math.Abs(ownKingSquare.Rank - opponentKingSquare.Rank));
 
-		return (int)Math.Round(eval * 10 * 0.1);
+		return eval;
 	}
 
 	private int EvaluateBoard()
@@ -223,9 +232,12 @@ public class BotMk09 : IChessBot
 		eval += EvaluatePositions(true, PieceType.Bishop, POSITION_MAP_BISHOP) - EvaluatePositions(false, PieceType.Bishop, POSITION_MAP_BISHOP);
 		eval += EvaluatePositions(true, PieceType.Rook, POSITION_MAP_ROOK) - EvaluatePositions(false, PieceType.Rook, POSITION_MAP_ROOK);
 		eval += EvaluatePositions(true, PieceType.Queen, POSITION_MAP_QUEEN) - EvaluatePositions(false, PieceType.Queen, POSITION_MAP_QUEEN);
+		eval += (int)((1F - endgameFactor) * EvaluatePositions(true, PieceType.King, POSITION_MAP_KING_START) - EvaluatePositions(false, PieceType.King, POSITION_MAP_KING_START));
+		eval += (int)(endgameFactor * EvaluatePositions(true, PieceType.King, POSITION_MAP_KING_END) - EvaluatePositions(false, PieceType.King, POSITION_MAP_KING_END));
 
 		eval *= board.IsWhiteToMove ? 1 : -1;
-		eval += EvaluateKings(board.IsWhiteToMove);
+		if (eval > MIN_WINNING_VALUE)
+			eval += (int)(endgameFactor * EvaluateKings(board.IsWhiteToMove));
 		return eval;
 	}
 
