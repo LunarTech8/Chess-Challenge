@@ -4,7 +4,7 @@ using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 
-// Like BotMk06 but with a dict for the results of CalculateMoveRating in SortMoves to try to improve the performance -> FAIL
+// Like BotMk06 but with a dict for the results of CalculateMoveRating in SortMoves to try to improve the performance
 public class BotMk11 : IChessBot
 {
 	// ----------------
@@ -166,7 +166,7 @@ public class BotMk11 : IChessBot
 		Dictionary<Move, int> moveRatings = new();
 		foreach (var move in moves)
 			moveRatings[move] = CalculateMoveRating(move);
-		Array.Sort(moves, delegate(Move moveA, Move moveB) { return moveRatings[moveA].CompareTo(moveRatings[moveB]); });
+		Array.Sort(moves, delegate(Move moveA, Move moveB) { return moveRatings[moveB].CompareTo(moveRatings[moveA]); });
 		return moves;
 	}
 

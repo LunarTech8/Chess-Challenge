@@ -171,7 +171,7 @@ public class BotMk12 : IChessBot
 
 	private Move[] SortMoves(Move[] moves)
 	{
-		Array.Sort(moves, delegate(Move moveA, Move moveB) { return CalculateMoveRating(moveA).CompareTo(CalculateMoveRating(moveB)); });
+		Array.Sort(moves, delegate(Move moveA, Move moveB) { return CalculateMoveRating(moveB).CompareTo(CalculateMoveRating(moveA)); });
 		return moves;
 	}
 
