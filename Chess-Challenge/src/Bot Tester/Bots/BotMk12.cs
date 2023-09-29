@@ -4,7 +4,7 @@ using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 
-// Like BotMk06 but with POSITION_MAP_KING_START and POSITION_MAP_KING_END
+// Like BotMk06 but with POSITION_MAP_KING_START and POSITION_MAP_KING_END -> WORSE
 public class BotMk12 : IChessBot
 {
 	// ----------------

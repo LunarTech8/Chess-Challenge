@@ -4,7 +4,8 @@ using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 
-public class MyBot : IChessBot
+// Like BotMk06 but with POSITION_MAP_KING_START and POSITION_MAP_KING_END and a dict for the results of CalculateMoveRating in SortMoves
+public class BotMk13 : IChessBot
 {
 	// ----------------
 	// DATA CODE
