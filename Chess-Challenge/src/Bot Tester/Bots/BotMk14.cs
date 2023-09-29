@@ -4,7 +4,8 @@ using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 
-public class MyBot : IChessBot
+// Like BotMk13 but with improved CalculateMoveRating
+public class BotMk14 : IChessBot
 {
 	// ----------------
 	// DATA CODE

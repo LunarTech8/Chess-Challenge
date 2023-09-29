@@ -20,3 +20,4 @@ BotMk11 vs BotMk06 outcome with 278 games: 106 wins - 64 draws - 108 losses - 0 
 BotMk12 vs BotMk06 outcome with 1000 games: 340 wins - 169 draws - 491 losses - 1 timeouts - 0 illegalMoves
 BotMk11 vs BotMk06 outcome with 1000 games: 395 wins - 227 draws - 378 losses - 2 timeouts - 0 illegalMoves
 BotMk11 vs BotMk02 outcome with 298 games: 140 wins - 38 draws - 120 losses - 0 timeouts - 0 illegalMoves
+BotMk13 vs BotMk06 outcome with 532 games: 195 wins - 86 draws - 251 losses - 0 timeouts - 0 illegalMoves
