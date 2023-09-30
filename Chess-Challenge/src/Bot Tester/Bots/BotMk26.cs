@@ -8,9 +8,10 @@ using static System.Math;
 using static ChessChallenge.API.PieceType;
 using static System.BitConverter;
 
-public class MyBot : IChessBot
+// Like BotMk25 but clearing MOVE_RATINGS_DICT instead of recreating it each time
+public class BotMk26 : IChessBot
 {
-	// TODO: total removable tokens: 55+198=253 -> currently at 1018/1024
+	// TODO: total removable tokens: 59+198=257 -> currently at 1005/1024
 	// ----------------
 	// DATA CODE
 	// ----------------
@@ -66,9 +67,9 @@ public class MyBot : IChessBot
 		CreatePositionMap(0x32464B50555A5F50, 0x464B50555A5F645A, 0x466478828778695A, 0x46647D8C9182695A)   // POSITION_MAP_KING_END
 	};
 
-	// private readonly int[] PASSED_PAWN_VALUE = { 0, 120, 80, 50, 30, 15, 15 };
-	private readonly PieceType[] EVAL_PIECE_TYPES = {Pawn, Knight, Bishop, Rook, Queen};
-	// TODO: inlining following will save 11*5=55 tokens
+	// TODO: inlining following will save 4+11*5=59 tokens
+	private readonly PieceType[] EVAL_PIECE_TYPES = {Pawn, Knight, Bishop, Rook, Queen};  // inline with: new[] {Pawn, Knight, Bishop, Rook, Queen}
+	private readonly int[] PASSED_PAWN_VALUE = { 0, 120, 80, 50, 30, 15, 15 };  // TODO: maybe tokens can be reduced by using shifted ulong value
 	private const int CHECKMATE_VALUE = 1000000000;
 	private const int MIN_WINNING_VALUE = 200;
 	private const int RATING_BIAS_CAPTURE_WIN = 8000000;
@@ -78,9 +79,10 @@ public class MyBot : IChessBot
 	private const int RATING_BIAS_ATTACKED = 50;
 	private const int KING_PUSH_TO_EDGE_FACTOR = 10;
 	private const int KING_MOVE_CLOSER_FACTOR = 4;
-	private const float MIN_THINK_TIME = 720.0F;
+	private const float MIN_THINK_TIME = 120.0F;
 	private const float ENDGAME_FACTOR_OFFSET = 1000.0F;
 
+    // private readonly int[] PIECE_VALUES = {0, 100, 300, 320, 500, 900, 10000};  // Piece values: null, pawn, knight, bishop, rook, queen, king
     private int GetPieceValue(PieceType pieceType) => pieceType switch
     {
         Pawn => 100,
@@ -107,9 +109,9 @@ public class MyBot : IChessBot
     // FUNCTION CODE
     // ----------------
 
-	// private readonly ulong[] PASSED_PAWN_MASKS = new ulong[128];
+	private readonly ulong[] PASSED_PAWN_MASKS = new ulong[128];
 	private readonly Dictionary<Move, int> MOVE_RATINGS_DICT = new();
-	private readonly System.Threading.CancellationTokenSource CANCEL_SEARCH_TIMER = new();
+
 
     private Board board;
 	private int minimaxDepth;
@@ -118,18 +120,17 @@ public class MyBot : IChessBot
 	private bool isSearchCancelled;
 	private float endgameFactor;
 
-	// NOTE: not enough tokens available, impact seems to be not that big
-	// public MyBot()
-	// {
-	// 	// Init PASSED_PAWN_MASKS:
-	// 	for (int i = 0; i < 64; i++)
-	// 	{
-	// 		int rank = i >> 3, file = i & 0b000111;
-	// 		ulong adjacentFiles = 0x101010101010101ul << Max(0, file - 1) | 0x101010101010101ul << Min(7, file + 1);
-	// 		PASSED_PAWN_MASKS[i] = (0x101010101010101ul << file | adjacentFiles) & ~(ulong.MaxValue >> (64 - 8 * (rank + 1)));
-	// 		PASSED_PAWN_MASKS[i + 64] = (0x101010101010101ul << file | adjacentFiles) & (1ul << 8 * rank - 1);
-	// 	}
-	// }
+	public BotMk26()
+	{
+		// Init PASSED_PAWN_MASKS:
+		for (int i = 0; i < 64; i++)
+		{
+			int rank = i >> 3, file = i & 0b000111;
+			ulong adjacentFiles = 0x101010101010101ul << Max(0, file - 1) | 0x101010101010101ul << Min(7, file + 1);
+			PASSED_PAWN_MASKS[i] = (0x101010101010101ul << file | adjacentFiles) & ~(ulong.MaxValue >> (64 - 8 * (rank + 1)));
+			PASSED_PAWN_MASKS[i + 64] = (0x101010101010101ul << file | adjacentFiles) & (1ul << 8 * rank - 1);
+		}
+	}
 
 	private static int[] CreatePositionMap(ulong file1, ulong file2, ulong file3, ulong file4)
 	{
@@ -197,11 +198,20 @@ public class MyBot : IChessBot
 		for (int mapIdxStart = 0; mapIdxStart < 6; mapIdxStart++)
 		{
 			int mapIdxEnd = mapIdxStart == 0 ? 6 : mapIdxStart == 5 ? 7 : -1;
-			foreach (var piece in board.GetPieceList((PieceType)(mapIdxStart + 1), forWhite))
-			{
-				int index = forWhite ? piece.Square.Index : new Square(piece.Square.File, 7 - piece.Square.Rank).Index;
+			// PieceList pieceList = board.GetPieceList((PieceType)(mapIdxStart + 1), forWhite);
+			// for (int pieceIdx = 0; pieceIdx < pieceList.Count; pieceIdx++)
+			// {
+			// 	var square = pieceList.GetPiece(pieceIdx).Square;
+			// 	if (!forWhite)
+			// 		square = new(square.File, 7 - square.Rank);
+			// 	// Evaluate position with endgame factor:
+			// 	if (mapIdxEnd >= 0)
+			// 		eval += (int)((1F - endgameFactor) * POSITION_MAPS[mapIdxStart][square.Index] + endgameFactor * POSITION_MAPS[mapIdxEnd][square.Index]);
+			// 	else
+			// 		eval += POSITION_MAPS[mapIdxStart][square.Index];
+			// }
+			foreach (int index in board.GetPieceList((PieceType)(mapIdxStart + 1), forWhite).Select(piece => forWhite ? piece.Square.Index : new Square(piece.Square.File, 7 - piece.Square.Rank).Index))
 				eval += mapIdxEnd < 0 ? POSITION_MAPS[mapIdxStart][index] : (int)((1F - endgameFactor) * POSITION_MAPS[mapIdxStart][index] + endgameFactor * POSITION_MAPS[mapIdxEnd][index]);
-			}
 		}
 		return eval;
 	}
@@ -229,11 +239,10 @@ public class MyBot : IChessBot
 		}
 
 		// Evaluate pawns:
-		// NOTE: not enough tokens available, impact seems to be not that big
-		// int passedPawnMaskIdxOffset = forWhite ? 0 : 64;
-		// foreach (var piece in board.GetPieceList(Pawn, forWhite))
-		// 	if ((board.GetPieceBitboard(Pawn, !forWhite) & PASSED_PAWN_MASKS[piece.Square.Index + passedPawnMaskIdxOffset]) == 0ul)
-		// 		eval += PASSED_PAWN_VALUE[forWhite ? 7 - piece.Square.Rank : piece.Square.Rank];
+		int passedPawnMaskIdxOffset = forWhite ? 0 : 64;
+		foreach (var piece in board.GetPieceList(Pawn, forWhite))
+			if ((board.GetPieceBitboard(Pawn, !forWhite) & PASSED_PAWN_MASKS[piece.Square.Index + passedPawnMaskIdxOffset]) == 0ul)
+				eval += PASSED_PAWN_VALUE[forWhite ? 7 - piece.Square.Rank : piece.Square.Rank];
 
 		return eval;
 	}
@@ -296,7 +305,8 @@ public class MyBot : IChessBot
 		var isCheckmateFound = false;  // TEST:
 		bestMoveOverall = nullMove;
 		isSearchCancelled = false;
-		System.Threading.Tasks.Task.Delay(CalculateThinkTime(timer), CANCEL_SEARCH_TIMER.Token).ContinueWith(task => isSearchCancelled = true);
+		var cancelSearchTimer = new System.Threading.CancellationTokenSource();  // TODO: make global instead of recreating each round
+		System.Threading.Tasks.Task.Delay(CalculateThinkTime(timer), cancelSearchTimer.Token).ContinueWith(task => isSearchCancelled = true);
 		Console.WriteLine("Think time = " + CalculateThinkTime(timer));  // TEST:
 		for (minimaxDepth = 0; minimaxDepth < 128; minimaxDepth++)
 		{

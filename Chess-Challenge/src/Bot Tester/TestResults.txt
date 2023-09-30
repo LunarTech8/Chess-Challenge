@@ -28,3 +28,13 @@ BotMk16 vs BotMk15 outcome with 100 games: 50 wins - 22 draws - 28 losses - 0 ti
 BotMk17 vs BotMk15 outcome with 100 games: 52 wins - 19 draws - 29 losses - 4 timeouts - 0 illegalMoves
 BotMk18 vs BotMk16 outcome with 100 games: 37 wins - 29 draws - 34 losses - 6 timeouts - 0 illegalMoves
 BotMk17 vs BotMk16 outcome with 100 games: 48 wins - 19 draws - 33 losses - 7 timeouts - 0 illegalMoves
+BotMk19 vs BotMk17 outcome with 86 games: 27 wins - 11 draws - 48 losses - 0 timeouts - 0 illegalMoves
+BotMk21 vs BotMk14 outcome with 100 games: 33 wins - 18 draws - 49 losses - 0 timeouts - 0 illegalMoves
+BotMk22 vs BotMk14 outcome with 100 games: 40 wins - 19 draws - 41 losses - 0 timeouts - 0 illegalMoves
+BotMk23 vs BotMk14 outcome with 100 games: 38 wins - 21 draws - 41 losses - 0 timeouts - 0 illegalMoves
+BotMk20 vs BotMk19 outcome with 68 games: 28 wins - 14 draws - 26 losses - 0 timeouts - 0 illegalMoves
+BotMk24 vs BotMk22 outcome with 100 games: 44 wins - 18 draws - 38 losses - 0 timeouts - 0 illegalMoves
+BotMk25 vs BotMk14 outcome with 20 games: 4 wins - 3 draws - 13 losses - 0 timeouts - 0 illegalMoves
+BotMk25 vs BotMk22 outcome with 140 games: 57 wins - 24 draws - 59 losses - 0 timeouts - 0 illegalMoves
+BotMk26 vs BotMk25 outcome with 82 games: 34 wins - 18 draws - 30 losses - 0 timeouts - 0 illegalMoves
+BotMk27 vs BotMk25 outcome with 84 games: 37 wins - 15 draws - 32 losses - 0 timeouts - 0 illegalMoves

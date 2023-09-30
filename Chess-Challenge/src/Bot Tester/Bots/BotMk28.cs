@@ -8,7 +8,8 @@ using static System.Math;
 using static ChessChallenge.API.PieceType;
 using static System.BitConverter;
 
-public class MyBot : IChessBot
+// Like BotMk27 but with 720.0F min think time
+public class BotMk28 : IChessBot
 {
 	// TODO: total removable tokens: 55+198=253 -> currently at 1018/1024
 	// ----------------

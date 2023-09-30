@@ -1,7 +1,2 @@
-// MyBot vs BotMk06 with 1000 games
-FINISHED BotMk18 vs BotMk16 with 100 games
-FINISHED BotMk17 vs BotMk16 with 100 games
-BotMk19 vs BotMk17 with 100 games
-BotMk20 vs BotMk19 with 100 games
-BotMk19 vs BotMk16 with 100 games
-BotMk18 vs BotMk17 with 100 games
+// MyBot vs BotMk27 with 1000 games
+BotMk29 vs BotMk28 with 1000 games

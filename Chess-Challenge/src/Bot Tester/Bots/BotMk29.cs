@@ -8,7 +8,8 @@ using static System.Math;
 using static ChessChallenge.API.PieceType;
 using static System.BitConverter;
 
-public class MyBot : IChessBot
+// Like BotMk27 but with 960.0F min think time
+public class BotMk29 : IChessBot
 {
 	// TODO: total removable tokens: 55+198=253 -> currently at 1018/1024
 	// ----------------
@@ -78,7 +79,7 @@ public class MyBot : IChessBot
 	private const int RATING_BIAS_ATTACKED = 50;
 	private const int KING_PUSH_TO_EDGE_FACTOR = 10;
 	private const int KING_MOVE_CLOSER_FACTOR = 4;
-	private const float MIN_THINK_TIME = 720.0F;
+	private const float MIN_THINK_TIME = 960.0F;
 	private const float ENDGAME_FACTOR_OFFSET = 1000.0F;
 
     private int GetPieceValue(PieceType pieceType) => pieceType switch
