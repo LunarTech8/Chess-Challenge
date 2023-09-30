@@ -1,8 +1,12 @@
 ﻿using ChessChallenge.API;
 using System;
-using System.Numerics;
+// using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
+
+using static System.Math;
+using static ChessChallenge.API.PieceType;
+using static System.BitConverter;
 
 public class MyBot : IChessBot
 {
@@ -11,7 +15,7 @@ public class MyBot : IChessBot
 	// ----------------
 
 	// HexValue = TransformAndRightToLeft(DecValue + 100)
-	private static readonly int[][] POSITION_MAPS = {
+	private readonly int[][] POSITION_MAPS = {
 		// DecValues: +00 +50 +10 +05 +00 +05 +05 +00
 		// DecValues: +00 +50 +10 +05 +00 -05 +10 +00
 		// DecValues: +00 +50 +20 +10 +00 -10 +10 +00
@@ -61,7 +65,8 @@ public class MyBot : IChessBot
 		CreatePositionMap(0x32464B50555A5F50, 0x464B50555A5F645A, 0x466478828778695A, 0x46647D8C9182695A)   // POSITION_MAP_KING_END
 	};
 
-	private static readonly PieceType[] EVAL_PIECE_TYPES = {PieceType.Pawn, PieceType.Knight, PieceType.Bishop, PieceType.Rook, PieceType.Queen};
+	// TODO: inlining following will save 4+11*5=59 tokens
+	private readonly PieceType[] EVAL_PIECE_TYPES = {Pawn, Knight, Bishop, Rook, Queen};  // inline with: new[] {Pawn, Knight, Bishop, Rook, Queen}
 	private const int CHECKMATE_VALUE = 1000000000;
 	private const int MIN_WINNING_VALUE = 200;
 	private const int RATING_BIAS_CAPTURE_WIN = 8000000;
@@ -71,22 +76,26 @@ public class MyBot : IChessBot
 	private const int RATING_BIAS_ATTACKED = 50;
 	private const int KING_PUSH_TO_EDGE_FACTOR = 10;
 	private const int KING_MOVE_CLOSER_FACTOR = 4;
+	private const float MIN_THINK_TIME = 720.0F;
+	private const float ENDGAME_FACTOR_OFFSET = 1000.0F;
 
-    // private static readonly int[] PIECE_VALUES = { 0, 100, 300, 320, 500, 900, 10000 };  // Piece values: null, pawn, knight, bishop, rook, queen, king
-    private static int GetPieceValue(PieceType pieceType) => pieceType switch
-    {
-        PieceType.Pawn => 100,
-        PieceType.Knight => 300,
-        PieceType.Bishop => 320,
-        PieceType.Rook => 500,
-        PieceType.Queen => 900,
-        PieceType.King => 10000,
-        _ => 0,
-    };
+    // private readonly int[] PIECE_VALUES = {0, 100, 300, 320, 500, 900, 10000};  // Piece values: null, pawn, knight, bishop, rook, queen, king
+    // private int GetPieceValue(PieceType pieceType) => pieceType switch
+    // {
+    //     Pawn => 100,
+    //     Knight => 300,
+    //     Bishop => 320,
+    //     Rook => 500,
+    //     Queen => 900,
+    //     King => 10000,
+    //     _ => 0,
+    // };
+	private int GetPieceValue(PieceType pieceType) => new int[] {0, 100, 300, 320, 500, 900, 10000}[(int)pieceType];  // Piece values: null, pawn, knight, bishop, rook, queen, king
 
     // private static readonly int[] START_PIECES_COUNTS = { 0, 8, 2, 2, 2, 1, 0 };
     // private static readonly int START_PIECES_VALUE = 2 * PIECE_VALUES.Zip(START_PIECES_COUNTS, (x, y) => x * y).Sum();
-    private static float CalculateEndgameFactor(int piecesValueSum) => 1F - Math.Min(1F, (piecesValueSum - 1000F) / 7880F);
+    private float CalculateEndgameFactor(int piecesValueSum) => 1.0F - Min(1.0F, (piecesValueSum - ENDGAME_FACTOR_OFFSET) / 7880.0F);
+	// FIXME: make king less aggressive at start or test different endgame factor calculations
 
     // TODO: https://www.youtube.com/watch?v=U4ogK0MIzqk&t=430s
     //	- transpositions -> Probably uses up to many tokens
@@ -113,14 +122,12 @@ public class MyBot : IChessBot
 
 	private static int[] CreatePositionMap(ulong file1, ulong file2, ulong file3, ulong file4)
 	{
-		byte[] byteArray = BitConverter.GetBytes(file1).Concat(BitConverter.GetBytes(file2)).Concat(BitConverter.GetBytes(file3)).Concat(BitConverter.GetBytes(file4)).ToArray();
-		int[] map = new int[64];
+		var byteArray = GetBytes(file1).Concat(GetBytes(file2)).Concat(GetBytes(file3)).Concat(GetBytes(file4)).ToArray();
+		var map = new int[64];
 		// Shift, mirror and transpose:
-		for (int i = 0; i < 4; i++)  // TODO: maybe for loops can be replaced by while loops to reduce tokens
-		{
+		for (int i = 0; i < 4; i++)
 			for (int j = 0; j < 8; j++)
 				map[j * 8 + i] = map[j * 8 + 7 - i] = byteArray[i * 8 + j] - 100;
-		}
 		return map;
 	}
 
@@ -165,14 +172,14 @@ public class MyBot : IChessBot
 		Dictionary<Move, int> moveRatings = new();
 		foreach (var move in moves)
 			moveRatings[move] = CalculateMoveRating(move);
-		Array.Sort(moves, delegate(Move moveA, Move moveB) { return moveRatings[moveB].CompareTo(moveRatings[moveA]); });
+		Array.Sort(moves, (moveA, moveB) => moveRatings[moveB].CompareTo(moveRatings[moveA]));
 		return moves;
 	}
 
 	private int EvaluatePieces(bool forWhite)
 	{
 		int eval = 0;
-		foreach (PieceType pieceType in EVAL_PIECE_TYPES)
+		foreach (var pieceType in EVAL_PIECE_TYPES)
 			eval += GetPieceValue(pieceType) * board.GetPieceList(pieceType, forWhite).Count;
 		return eval;
 	}
@@ -183,18 +190,20 @@ public class MyBot : IChessBot
 		for (int mapIdxStart = 0; mapIdxStart < 6; mapIdxStart++)
 		{
 			int mapIdxEnd = mapIdxStart == 0 ? 6 : mapIdxStart == 5 ? 7 : -1;
-			PieceList pieceList = board.GetPieceList((PieceType)(mapIdxStart + 1), forWhite);
-			for (int pieceIdx = 0; pieceIdx < pieceList.Count; pieceIdx++)
-			{
-				var square = pieceList.GetPiece(pieceIdx).Square;
-				if (!forWhite)
-					square = new Square(square.File, 7 - square.Rank);
-				// Evaluate position with endgame factor:
-				if (mapIdxEnd >= 0)
-					eval += (int)((1F - endgameFactor) * POSITION_MAPS[mapIdxStart][square.Index] + endgameFactor * POSITION_MAPS[mapIdxEnd][square.Index]);
-				else
-					eval += POSITION_MAPS[mapIdxStart][square.Index];
-			}
+			// PieceList pieceList = board.GetPieceList((PieceType)(mapIdxStart + 1), forWhite);
+			// for (int pieceIdx = 0; pieceIdx < pieceList.Count; pieceIdx++)
+			// {
+			// 	var square = pieceList.GetPiece(pieceIdx).Square;
+			// 	if (!forWhite)
+			// 		square = new(square.File, 7 - square.Rank);
+			// 	// Evaluate position with endgame factor:
+			// 	if (mapIdxEnd >= 0)
+			// 		eval += (int)((1F - endgameFactor) * POSITION_MAPS[mapIdxStart][square.Index] + endgameFactor * POSITION_MAPS[mapIdxEnd][square.Index]);
+			// 	else
+			// 		eval += POSITION_MAPS[mapIdxStart][square.Index];
+			// }
+			foreach (var square in board.GetPieceList((PieceType)(mapIdxStart + 1), forWhite).Select(piece => forWhite ? piece.Square : new(piece.Square.File, 7 - piece.Square.Rank)))
+				eval += mapIdxEnd < 0 ? POSITION_MAPS[mapIdxStart][square.Index] : (int)((1F - endgameFactor) * POSITION_MAPS[mapIdxStart][square.Index] + endgameFactor * POSITION_MAPS[mapIdxEnd][square.Index]);
 		}
 		return eval;
 	}
@@ -207,11 +216,11 @@ public class MyBot : IChessBot
 
 		// Evaluate opponents king distance from center:
 		// This helps getting the opponents king to the edges to make it easier to checkmate him
-		eval += KING_PUSH_TO_EDGE_FACTOR * (Math.Max(3 - opponentKingSquare.File, opponentKingSquare.File - 4) + Math.Max(3 - opponentKingSquare.Rank, opponentKingSquare.Rank - 4));
+		eval += KING_PUSH_TO_EDGE_FACTOR * (Max(3 - opponentKingSquare.File, opponentKingSquare.File - 4) + Max(3 - opponentKingSquare.Rank, opponentKingSquare.Rank - 4));
 
 		// Evaluate distance between kings:
 		// This helps getting the own king close to the opponents king to make it easier to checkmate him
-		eval += KING_MOVE_CLOSER_FACTOR * (14 - Math.Abs(ownKingSquare.File - opponentKingSquare.File) - Math.Abs(ownKingSquare.Rank - opponentKingSquare.Rank));
+		eval += KING_MOVE_CLOSER_FACTOR * (14 - Abs(ownKingSquare.File - opponentKingSquare.File) - Abs(ownKingSquare.Rank - opponentKingSquare.Rank));
 
 		return eval;
 	}
@@ -223,13 +232,10 @@ public class MyBot : IChessBot
 		// - Pawns should advance but be covered
 		// TODO: look here for inspiration: https://github.com/SebLague/Chess-Coding-Adventure/blob/abcb1e311a7fec0393e0b7d2ddf4920ab3baa41b/Chess-Coding-Adventure/src/Core/Evaluation/Evaluation.cs#L173
 
-		int evalPiecesWhite = EvaluatePieces(true);
-		int evalPiecesBlack = EvaluatePieces(false);
+		int evalPiecesWhite = EvaluatePieces(true), evalPiecesBlack = EvaluatePieces(false);
 		endgameFactor = CalculateEndgameFactor(evalPiecesWhite + evalPiecesBlack);
 
-		int eval = evalPiecesWhite - evalPiecesBlack;
-		eval += EvaluatePositions(true) - EvaluatePositions(false);
-
+		int eval = evalPiecesWhite - evalPiecesBlack + EvaluatePositions(true) - EvaluatePositions(false);
 		eval *= board.IsWhiteToMove ? 1 : -1;
 		if (eval > MIN_WINNING_VALUE)
 			eval += (int)(endgameFactor * EvaluateKings(board.IsWhiteToMove));
@@ -247,7 +253,7 @@ public class MyBot : IChessBot
 			int eval = EvaluateBoard();
 			if (eval >= beta)
 				return beta;
-			alpha = Math.Max(alpha, eval);
+			alpha = Max(alpha, eval);
 		}
 
 		if (board.IsInCheckmate())
@@ -269,13 +275,9 @@ public class MyBot : IChessBot
 			{
 				alpha = eval;
 				if (depth == minimaxDepth)
-				{
 					bestMoveInIteration = move;
-				}
 				if (alpha >= beta)
-				{
 					break;
-				}
 			}
 		}
 		return alpha;
@@ -283,39 +285,40 @@ public class MyBot : IChessBot
 
 	private int CalculateThinkTime(Timer timer)  // TODO: improve calculation
 	{
-		float thinkTime = Math.Min(120.0F, timer.MillisecondsRemaining / 40.0F);
+		float thinkTime = Min(MIN_THINK_TIME, timer.MillisecondsRemaining / 40.0F);
 		if (timer.MillisecondsRemaining > timer.IncrementMilliseconds * 2)
 			thinkTime += timer.IncrementMilliseconds * 0.8F;
-		return (int)Math.Ceiling(Math.Max(thinkTime, Math.Min(50.0F, timer.MillisecondsRemaining * 0.25F)));
+		return (int)Ceiling(Max(thinkTime, Min(60.0F, timer.MillisecondsRemaining * 0.25F)));
 	}
 
 	public Move Think(Board currentBoard, Timer timer)
 	{
+		var nullMove = Move.NullMove;
 		board = currentBoard;
 		Console.WriteLine("-------- " + GetType().Name + " --------");  // TEST:
 		var isCheckmateFound = false;  // TEST:
-		bestMoveOverall = Move.NullMove;
+		bestMoveOverall = nullMove;
 		isSearchCancelled = false;
 		var cancelSearchTimer = new System.Threading.CancellationTokenSource();
 		System.Threading.Tasks.Task.Delay(CalculateThinkTime(timer), cancelSearchTimer.Token).ContinueWith(task => isSearchCancelled = true);
 		Console.WriteLine("Think time = " + CalculateThinkTime(timer));  // TEST:
 		for (minimaxDepth = 0; minimaxDepth < 128; minimaxDepth++)
 		{
-			bestMoveInIteration = Move.NullMove;
+			bestMoveInIteration = nullMove;
 			var lastEval = MiniMax(minimaxDepth, -CHECKMATE_VALUE, CHECKMATE_VALUE);
-			if (isCheckmateFound == false && Math.Abs(lastEval) == CHECKMATE_VALUE)  // TEST:
+			if (isCheckmateFound == false && Abs(lastEval) == CHECKMATE_VALUE)  // TEST:
 			{
-				Console.WriteLine((board.IsWhiteToMove == (Math.Sign(lastEval) == 1) ? "White" : "Black") + " checkmates in " + minimaxDepth.ToString() + " turn(s)");
+				Console.WriteLine((board.IsWhiteToMove == (Sign(lastEval) == 1) ? "White" : "Black") + " checkmates in " + minimaxDepth.ToString() + " turn(s)");
 				isCheckmateFound = true;
 			}
-			if (bestMoveInIteration != Move.NullMove)
+			if (bestMoveInIteration != nullMove)
 				bestMoveOverall = bestMoveInIteration;
 			if (isSearchCancelled)
 				break;
 		}
 		Console.WriteLine("Max minimaxDepth = " + minimaxDepth);  // TEST:
 		Console.WriteLine("endgameFactor = " + CalculateEndgameFactor(EvaluatePieces(true) + EvaluatePieces(false)));  // TEST:
-		if (bestMoveOverall == Move.NullMove)
+		if (bestMoveOverall == nullMove)
 			bestMoveOverall = SortMoves(board.GetLegalMoves())[0];
 		return bestMoveOverall;
 	}

@@ -4,8 +4,8 @@ using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 
-// Like BotMk14 but with 480.0F min think time
-public class BotMk16 : IChessBot
+// Like BotMk14 but with 960.0F min think time
+public class BotMk17 : IChessBot
 {
 	// ----------------
 	// DATA CODE
@@ -284,7 +284,7 @@ public class BotMk16 : IChessBot
 
 	private int CalculateThinkTime(Timer timer)  // TODO: improve calculation
 	{
-		float thinkTime = Math.Min(480.0F, timer.MillisecondsRemaining / 40.0F);
+		float thinkTime = Math.Min(960.0F, timer.MillisecondsRemaining / 40.0F);
 		if (timer.MillisecondsRemaining > timer.IncrementMilliseconds * 2)
 			thinkTime += timer.IncrementMilliseconds * 0.8F;
 		return (int)Math.Ceiling(Math.Max(thinkTime, Math.Min(50.0F, timer.MillisecondsRemaining * 0.25F)));
