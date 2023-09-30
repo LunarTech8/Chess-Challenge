@@ -10,7 +10,6 @@ using static System.BitConverter;
 
 public class MyBot : IChessBot
 {
-	// TODO: total removable tokens: 55+198=253 -> currently at 1018/1024
 	// ----------------
 	// DATA CODE
 	// ----------------
@@ -66,20 +65,20 @@ public class MyBot : IChessBot
 		CreatePositionMap(0x32464B50555A5F50, 0x464B50555A5F645A, 0x466478828778695A, 0x46647D8C9182695A)   // POSITION_MAP_KING_END
 	};
 
+	// NOTE: replaced const macros to reduce token count
+	// private const int CHECKMATE_VALUE = 1000000000;
+	// private const int MIN_WINNING_VALUE = 200;
+	// private const int RATING_BIAS_CAPTURE_WIN = 8000000;
+	// private const int RATING_BIAS_CAPTURE_LOSE = 2000000;
+	// private const int RATING_BIAS_PROMOTE = 6000000;
+	// private const int RATING_BIAS_CASTLE = 1000000;
+	// private const int RATING_BIAS_ATTACKED = 50;
+	// private const int KING_PUSH_TO_EDGE_FACTOR = 10;
+	// private const int KING_MOVE_CLOSER_FACTOR = 4;
+	// private const float MIN_THINK_TIME = 720.0F;
+	// private const float ENDGAME_FACTOR_OFFSET = 1000.0F;
 	// private readonly int[] PASSED_PAWN_VALUE = { 0, 120, 80, 50, 30, 15, 15 };
 	private readonly PieceType[] EVAL_PIECE_TYPES = {Pawn, Knight, Bishop, Rook, Queen};
-	// TODO: inlining following will save 11*5=55 tokens
-	private const int CHECKMATE_VALUE = 1000000000;
-	private const int MIN_WINNING_VALUE = 200;
-	private const int RATING_BIAS_CAPTURE_WIN = 8000000;
-	private const int RATING_BIAS_CAPTURE_LOSE = 2000000;
-	private const int RATING_BIAS_PROMOTE = 6000000;
-	private const int RATING_BIAS_CASTLE = 1000000;
-	private const int RATING_BIAS_ATTACKED = 50;
-	private const int KING_PUSH_TO_EDGE_FACTOR = 10;
-	private const int KING_MOVE_CLOSER_FACTOR = 4;
-	private const float MIN_THINK_TIME = 720.0F;
-	private const float ENDGAME_FACTOR_OFFSET = 1000.0F;
 
     private int GetPieceValue(PieceType pieceType) => pieceType switch
     {
@@ -92,16 +91,7 @@ public class MyBot : IChessBot
         _ => 0,
     };
 
-    private float CalculateEndgameFactor(int piecesValueSum) => 1.0F - (piecesValueSum - ENDGAME_FACTOR_OFFSET) / 7880.0F;
-
-    // TODO: https://www.youtube.com/watch?v=U4ogK0MIzqk&t=430s
-    //	- transpositions -> Probably uses up to many tokens
-	//	- maybe add a small amount of openings via uint64 values in -> Probably uses up to many tokens
-    // TODO: https://www.youtube.com/watch?v=_vqlIPDR2TU
-	//	- search extension on checkmate
-	//	- isolated pawns (bitboards)
-	//	- killer moves (move order)
-	//	- late move search reduction
+    private float CalculateEndgameFactor(int piecesValueSum) => 1.0F - (piecesValueSum - 1000.0F) / 7880.0F;
 
     // ----------------
     // FUNCTION CODE
@@ -146,26 +136,27 @@ public class MyBot : IChessBot
 	// - Advance pawns when winning
 	// - Queen should not move at start that much
 	// - Avoid repetitions at start
+	// - Store killer moves
 	private int CalculateMoveRating(Move move)
 	{
 		if (move == bestMoveOverall)
-			return CHECKMATE_VALUE;
+			return 1000000000;
 
 		int moveRating = 0;
 		bool isTargetSquareAttacked = board.SquareIsAttackedByOpponent(move.TargetSquare);
 		if (move.IsCapture)
 		{
 			moveRating += GetPieceValue(move.CapturePieceType) - GetPieceValue(move.MovePieceType);
-			moveRating += moveRating < 0 && isTargetSquareAttacked ? RATING_BIAS_CAPTURE_LOSE : RATING_BIAS_CAPTURE_WIN;
+			moveRating += moveRating < 0 && isTargetSquareAttacked ? 2000000 : 8000000;
 		}
 		else
 		{
 			if (move.IsPromotion)
-				moveRating += RATING_BIAS_PROMOTE;
+				moveRating += 6000000;
 			if (move.IsCastles)
-				moveRating += RATING_BIAS_CASTLE;
+				moveRating += 1000000;
 			if (isTargetSquareAttacked)
-				moveRating -= RATING_BIAS_ATTACKED;
+				moveRating -= 50;
 			int mapIdx = (int)move.MovePieceType - 1;
 			if (mapIdx != 0 && mapIdx != 5)
 				moveRating += POSITION_MAPS[mapIdx][move.TargetSquare.Index] - POSITION_MAPS[mapIdx][move.StartSquare.Index];
@@ -209,6 +200,7 @@ public class MyBot : IChessBot
 	// TODO: implement:
 	// - King should be behind pawns
 	// - Pawns should advance but be covered
+	// - Punish isolated pawns
 	private int EvaluateBoard()
 	{
 		bool forWhite = board.IsWhiteToMove;
@@ -220,11 +212,11 @@ public class MyBot : IChessBot
 		eval *= forWhite ? 1 : -1;
 
 		// Evaluate kings:
-		if (eval > MIN_WINNING_VALUE)
+		if (eval > 200)
 		{
 			var opponentKingSquare = board.GetKingSquare(!forWhite);
 			var ownKingSquare = board.GetKingSquare(forWhite);
-			int evalKings = KING_PUSH_TO_EDGE_FACTOR * (Max(3 - opponentKingSquare.File, opponentKingSquare.File - 4) + Max(3 - opponentKingSquare.Rank, opponentKingSquare.Rank - 4)) + KING_MOVE_CLOSER_FACTOR * (14 - Abs(ownKingSquare.File - opponentKingSquare.File) - Abs(ownKingSquare.Rank - opponentKingSquare.Rank));
+			int evalKings = 10 * (Max(3 - opponentKingSquare.File, opponentKingSquare.File - 4) + Max(3 - opponentKingSquare.Rank, opponentKingSquare.Rank - 4)) + 4 * (14 - Abs(ownKingSquare.File - opponentKingSquare.File) - Abs(ownKingSquare.Rank - opponentKingSquare.Rank));
 			eval += (int)(endgameFactor * evalKings);
 		}
 
@@ -238,6 +230,11 @@ public class MyBot : IChessBot
 		return eval;
 	}
 
+	// TODO: implement:
+    //	- Transpositions
+	//	- Add a small amount of openings via ulong values in
+	//	- Search extension on checkmate
+	//	- Late move search reduction
 	private int MiniMax(int depth, int alpha, int beta)
 	{
 		if (isSearchCancelled)
@@ -253,7 +250,7 @@ public class MyBot : IChessBot
 		}
 
 		if (board.IsInCheckmate())
-			return -CHECKMATE_VALUE;
+			return -1000000000;
 		if (board.IsDraw())
 			return 0;
 
@@ -281,7 +278,7 @@ public class MyBot : IChessBot
 
 	private int CalculateThinkTime(Timer timer)
 	{
-		float thinkTime = Min(MIN_THINK_TIME, timer.MillisecondsRemaining / 40.0F);
+		float thinkTime = Min(720.0F, timer.MillisecondsRemaining / 40.0F);
 		if (timer.MillisecondsRemaining > timer.IncrementMilliseconds * 2)
 			thinkTime += timer.IncrementMilliseconds * 0.8F;
 		return (int)Ceiling(Max(thinkTime, Min(60.0F, timer.MillisecondsRemaining * 0.25F)));
@@ -289,31 +286,20 @@ public class MyBot : IChessBot
 
 	public Move Think(Board currentBoard, Timer timer)
 	{
-		// TODO: removing test code will reduce tokens by 198
 		var nullMove = Move.NullMove;
 		board = currentBoard;
-		Console.WriteLine("-------- " + GetType().Name + " --------");  // TEST:
-		var isCheckmateFound = false;  // TEST:
 		bestMoveOverall = nullMove;
 		isSearchCancelled = false;
 		System.Threading.Tasks.Task.Delay(CalculateThinkTime(timer), CANCEL_SEARCH_TIMER.Token).ContinueWith(task => isSearchCancelled = true);
-		Console.WriteLine("Think time = " + CalculateThinkTime(timer));  // TEST:
 		for (minimaxDepth = 0; minimaxDepth < 128; minimaxDepth++)
 		{
 			bestMoveInIteration = nullMove;
-			var lastEval = MiniMax(minimaxDepth, -CHECKMATE_VALUE, CHECKMATE_VALUE);
-			if (isCheckmateFound == false && Abs(lastEval) == CHECKMATE_VALUE)  // TEST:
-			{
-				Console.WriteLine((board.IsWhiteToMove == (Sign(lastEval) == 1) ? "White" : "Black") + " checkmates in " + minimaxDepth.ToString() + " turn(s)");
-				isCheckmateFound = true;
-			}
+			var lastEval = MiniMax(minimaxDepth, -1000000000, 1000000000);
 			if (bestMoveInIteration != nullMove)
 				bestMoveOverall = bestMoveInIteration;
 			if (isSearchCancelled)
 				break;
 		}
-		Console.WriteLine("Max minimaxDepth = " + minimaxDepth);  // TEST:
-		Console.WriteLine("endgameFactor = " + CalculateEndgameFactor(EvaluatePieces(true) + EvaluatePieces(false)));  // TEST:
 		if (bestMoveOverall == nullMove)
 			bestMoveOverall = SortMoves(board.GetLegalMoves())[0];
 		return bestMoveOverall;
